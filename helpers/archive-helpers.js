@@ -1,6 +1,7 @@
 var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
+var https = require('https');
 
 /*
  * You will need to reuse the same paths many times over in the course of this sprint.
@@ -26,16 +27,95 @@ exports.initialize = function(pathsObj) {
 // modularize your code. Keep it clean!
 
 exports.readListOfUrls = function(callback) {
+  fs.readFile(exports.paths.list, function(err, data) {
+    if (!err) {
+      var arrayOfUrls = data.toString().split('\n');
+      callback(arrayOfUrls);
+    } else {
+      console.log('UNABLE TO READ');
+    }
+  });
 };
 
 exports.isUrlInList = function(url, callback) {
+
+  fs.readFile(exports.paths.list, function(err, data) {
+    if (!err) {
+      var arrayOfUrls = data.toString().split('\n');
+      var isInList = arrayOfUrls.includes(url) || false; 
+      callback(isInList);
+    } else {
+      console.log('UNABLE TO READ');
+    }
+  });
+  
 };
 
 exports.addUrlToList = function(url, callback) {
+  exports.isUrlInList(url, function(expect) {
+    
+    if (!expect) {
+      //console.log('writing file'); 
+      fs.appendFile(exports.paths.list, '\n' + url, function(err) {
+        console.log('writing file'); 
+        if (err) { 
+          throw err;
+        }
+        //console.log('writing file'); 
+      }); 
+      //fetch for data in sites.txt!!
+    } 
+      //write sites.txt
+  });
 };
 
 exports.isUrlArchived = function(url, callback) {
+  fs.readFile(exports.paths.archivedSites + '/' + url, function(err, data) {
+    if (!err) {
+      callback(true);
+    } else {
+      callback(false);
+    }
+  });
 };
 
 exports.downloadUrls = function(urls) {
+  urls.forEach(function(url, index) {
+    var requestSpecs = {
+      host: url,
+      port: 80,
+      path: '/',
+      method: 'GET'
+    };
+    console.log(urls);
+    if (url !== '') {
+      https.get('https://' + url, (res) => {
+        res.setEncoding('utf8');
+        let body = '';
+        console.log('inside GET REQUEST');
+        res.on('data', (chunk) => {
+          body += chunk;
+        });
+        res.on('end', () => {
+          fs.writeFile(exports.paths.archivedSites + '/' + url, body, (err) => {  
+            if (err) {
+              console.log('unable to create file in archive');
+            }
+            console.log('we stored it!!');
+          });
+        });
+
+        res.on('error', (e) => {
+          console.log('downloading urls failed', e);
+        });
+      });    
+    }
+    
+
+  });
 };
+
+
+
+
+

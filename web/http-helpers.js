@@ -14,6 +14,30 @@ exports.serveAssets = function(res, asset, callback) {
   // Write some code here that helps serve up your static files!
   // (Static files are things like html (yours or archived from others...),
   // css, or anything that doesn't change often.)
+  archive.isUrlArchived(asset, function(expect) {
+    if (expect) {
+      callback(true);
+    } else {
+      //will add this url to the list by calling the helper functions
+      archive.addUrlToList(asset);
+      callback(false);
+    }
+  });
+};
+
+exports.serveStaticFiles = function(path, res) {
+  fs.readFile(path, function(err, data) {
+    if (!err) {
+      res.writeHead(200, exports.headers);
+      res.write(data);
+      res.end();
+    } else {
+      console.log('Error');
+      res.writeHead(404, exports.headers);
+      res.end();
+    }
+  });
+
 };
 
 
